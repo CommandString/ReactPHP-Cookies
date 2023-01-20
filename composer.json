@@ -1,6 +1,6 @@
 {
-    "name": "commandstring/cookies",
-    "description": "A simpler way to manipulate cookies in PHP",
+    "name": "commandstring/reactphp-cookies",
+    "description": "A simpler way to manipulate cookies in React/Http",
     "type": "library",
     "license": "MIT",
     "autoload": {
@@ -15,5 +15,8 @@
     },
     "suggest": {
         "commandstring/cookie-encryption": "*"
+    },
+    "conflict": {
+        "commandstring/cookies": "*"
     }
 }
