@@ -60,7 +60,7 @@ class CookieController {
             throw new InvalidArgumentException("The cookie value must not contain any of the following characters `[\",\\;]`");
         }
 
-        $cookieHeader = sprintf('%s=%s; Expires=%s', $name, $value, $timeExpiresString);
+        $cookieHeader = sprintf('%s=%s; Expires=%s', $name, $this->encryptor->encrypt($value), $timeExpiresString);
 
         $empty = ["Path", "Domain"];
 
