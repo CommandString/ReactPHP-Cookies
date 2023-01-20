@@ -5,7 +5,7 @@ namespace CommandString\Cookies;
 use InvalidArgumentException;
 use DateTime;
 use Psr\Http\Message\ResponseInterface;
-use React\Http\Message\ServerRequest;
+use Psr\Http\Message\ServerRequestInterface;
 
 class CookieController {
     private CookieEncryptionInterface $encryptor;
@@ -14,7 +14,7 @@ class CookieController {
         $this->encryptor = $encryptor ?? new NullEncryption;
     }
 
-    public function cookie(ServerRequest &$request, ResponseInterface &$response): Cookie
+    public function cookie(ServerRequestInterface &$request, ResponseInterface &$response): Cookie
     {
         return new Cookie($request, $response, $this);
     }
@@ -26,7 +26,7 @@ class CookieController {
      * 
      * @return bool
      */
-    public function exists(ServerRequest &$request, string $name): bool
+    public function exists(ServerRequestInterface &$request, string $name): bool
     {
         return isset($request->getCookieParams()[$name]);
     }
@@ -92,7 +92,7 @@ class CookieController {
      * 
      * @return ?string
      */
-    public function get(ServerRequest &$request, string $name): ?string
+    public function get(ServerRequestInterface &$request, string $name): ?string
     {
         return (isset($request->getCookieParams()[$name])) ? $this->encryptor->decrypt($request->getCookieParams()[$name]) : null;
     }
@@ -102,7 +102,7 @@ class CookieController {
      * 
      * @param string $name
      */
-    public function delete(ResponseInterface &$response, ServerRequest &$request, string $cookie, string $path = "/", string $domain = ""): self
+    public function delete(ResponseInterface &$response, ServerRequestInterface &$request, string $cookie, string $path = "/", string $domain = ""): self
     {
         if ($this->exists($request, $cookie)) {
             $cookieHeader = "$cookie=deleted; Expires=Sun, 06 Nov 1994 08:49:37";
@@ -128,7 +128,7 @@ class CookieController {
      * 
      * @return void
      */
-    public function deleteAll(ResponseInterface &$response, ServerRequest &$request): self 
+    public function deleteAll(ResponseInterface &$response, ServerRequestInterface &$request): self 
     {
         $this->delete($response, $request, ...array_keys($request->getCookieParams()));
         return $this;

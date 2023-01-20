@@ -4,11 +4,11 @@ namespace CommandString\Cookies;
 
 use CommandString\Cookies\CookieController;
 use Psr\Http\Message\ResponseInterface;
-use React\Http\Message\ServerRequest;
+use Psr\Http\Message\ServerRequestInterface;
 
 class Cookie {
     public function __construct(
-        private ServerRequest &$request,
+        private ServerRequestInterface &$request,
         private ResponseInterface &$response,
         private CookieController $controller
     ) {}
