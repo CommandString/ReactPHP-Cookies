@@ -1,134 +1,117 @@
 
-# [CommandString/Cookies](https://packagist.org/packages/commandstring/cookies) - A simpler way to manipulate cookies in PHP #
+# [CommandString/ReactPHP-cookies](https://packagist.org/packages/commandstring/reactphp-cookies) - A simpler way to manipulate cookies in PHP #
 
-### Install with Composer using `composer require commandstring/cookies` ###
+### Install with Composer using `composer require commandstring/reactphp-cookies` ###
 
-## Requirements ##
-- PHP >=8.0
-- Basic understanding of PHP OOP
-- Composer 2
+*For the examples $req is an object that implements of PSR-7 ServerRequestInterface and $res is an object that implements PSR-7 ResponseInterface*
 
-## Basic Usage ##
+# Creating Controller
+
 ```php
-require  __DIR__."/vendor/autoload.php";
-use CommandString\Cookies\Cookie;
-
-$cookies = new Cookie();
-
-#                              v hours 
-#                              v valid   v seconds valid
-$cookies->set("name", "value", 168, 10, 30); // by default cookies expire in a week
-#                                   ^ minutes valid
-
-// After page refresh (An exception will be thrown if the cookie doesn't exist) //
-echo $cookies->get("name"); // output: value
-
-// Delete cookie (An exception will be thrown if the cookie doesn't exist) //
-$cookie->delete("name"); // remove the cookie
-
-// Delete all cookies
-$cookie->deleteAll();
-
-// Check if a cookie exists
-$cookie->exists("name"); // returns bool
+$cookieController = new CookieController(null);
 ```
 
-## Comparing regular cookie manipulation with CommandString/Cookies ##
-### CommandString/Cookies ###
+If you want to encrypt your cookies you can either create a class that implements CookieEncryptionInterface or use [Cookie Encryption](https://github.com/CommandString/Cookie-Encryption)
+
+Creating Cookie object from controller
+
+You will need to create an object that implements PSR-7's Response Interface beforehand
+
 ```php
-// config.php
-require  __DIR__."/vendor/autoload.php";
-use CommandString\Cookies\Cookie;
+$cookie = $cookieController->cookie($req, $res);
+```
 
-$cookies = new Cookie();
-// ...
+# Setting cookies
 
-// login.php
-require_once "config.php";
+```php
+$cookie->set("token", "123456", 1, 15, 13, "/app", "app.domain.com");
+```
 
-if ($userIsReadyToBeLoggedIn) {
-	$cookies->set("username", "Command_String");
-	header("location: home.php");
-}
-// ...
+This will create a cookie with the name of `token` that is set to `123456`. This cookie will expire in 1 hour, 15 minutes, and 13 seconds from now. The cookie is valid only in the app path and on the app.domain.com website.
 
-// home.php
+# Getting cookies
+
+```php
+$cookie->get("token");
+```
+
+If a cookie with the name of token is set then it will return it's value. If not it returns null.
+
+# Deleting cookies
+
+```php
+$cookie->delete("token", "/app", "app.domain.com");
+```
+
+This will delete a cookie with the name token that has its path set to `/app` and domain set to  `app.domain.com`
+
+# Example usage
+
+```php
 <?php
-require_once "config.php";
 
-if (!$cookies->exists("username")) {
-	header("location: login.php");
-}
-```
-```html
-// ...
-<h1>Welcome back, <?= $cookies->get("username")); ?></h1>
-// ...
-```
-```php
-// logout.php
-require_once "config.php";
+use CommandString\Cookies\CookieController;
+use Psr\Http\Message\ServerRequestInterface;
+use React\Http\HttpServer;
+use React\Http\Message\Response;
+use React\Socket\SocketServer;
 
-$cookies->deleteAll();
-header("location: login.php");
-```
-### Regular Cookie Manipulation ###
-```php
-// login.php
-setcookie($name, "ValueForCookie", time() + (3600 * 168), "/");
-header("location: home.php");
-}
+require_once "vendor/autoload.php";
 
-// home.php
-require_once "config.php";
+$cookies = new CookieController();
 
-if (isset($_COOKIE['username'])) {
-	header("location: login.php");
-}
+$http = new HttpServer(function (ServerRequestInterface $req) use ($cookies) {
+    $res = new React\Http\Message\Response;
 
-// ...
-```
-```html
-<h1>Welcome back, <?= $_COOKIE['username'] ?><h1>
-<!-- ... -->
-```
-```php
-// logout.php
-foreach ($_COOKIE as $key => $value) {
-	unset($_COOKIE[$key]);
-	setcookie($key, null, -1, '/');
-}
+    $cookie = $cookies->cookie($req, $res);
 
-header("location: login.php");
-```
+    $parts = explode("/", $req->getRequestTarget());
+    $partsNum = count($parts) - 1;
 
-## Implementing Custom Cookie Encryption ##
-```php
-use CommandString\Cookies\CookieEncryptionInterface;
-use CommandString\Cookies\Cookie;
+    $invalidReq = function (string $message) use (&$res): Response
+    {
+        $res->withStatus(403);
+		$res = $res->withHeader('content-type', 'text-plain');
+		$res->getBody()->write($message);
+    };
 
-class Encryption implements CookieEncrypytionInterface {
-	public function encrypt(string $data):string
-	{
-		/* do some encrypting stuff here */
-	}
-	public function decrypt(string $data):string
-	{
-		/* do some decrypting stuff here */
-	}
-}
+    if ($parts[1] === "set") {
+        if ($partsNum !== 3) {
+            return $invalidReq("Invalid URI, example `/set/id/123456`");
+        }
 
-$cookies = new Cookie((new Encryption()));
-// now when using $cookie->set("name", "value"); it will use the methods defined in encryption 
-```
+        $cookie->set($parts[2], $parts[3]);
+        $res->getBody()->write("Set cookie {$parts[2]} to {$parts[3]}");
+    }
 
-## Using CommandString/Encrypt with CommandString/Cookies ##
-### *[I recommend checking out the README for CommandString/Encrypt](https://github.com/CommandString/encrypt#basic-usage)* ###
-```php
-use CommandString\CookieEncryption\CookieEncryption;
-use CommandString\Cookies\Cookie;
+    if ($parts[1] === "get") {
+        if ($partsNum !== 2) {
+            return $invalidReq("Invalid URI, example `/get/id`");
+        }
 
-// use the cookieEncryption class that wraps around cmdstr/encrypt/encryption class
-$cookies = new Cookie(new CookieEncryption("MZCdg02STLzrsj05KE3SIL62SSlh2Ij", "AES-256-CTR"));
-// ... now cmdstr/encrypt will handle encrypting cookies
+        if ($cookie->exists($parts[2])) {
+            $res->getBody()->write("Found cookie {$parts[2]}, it is set to {$cookie->get($parts[2])}");
+        } else {
+            $res->getBody()->write("Cookie {$parts[2]} does not exist");
+        }
+    }
+
+    if ($parts[1] === "delete") {
+        if ($partsNum !== 2) {
+            return $invalidReq("Invalid URI, example `/delete/id`");
+        }
+
+        if ($cookie->exists($parts[2])) {
+            $cookie->delete($parts[2]);
+            $res->getBody()->write("Deleted cookie {$parts[2]}");
+        } else {
+            $res->getBody()->write("Cooke {$parts[2]} does not exist");
+        }
+    }
+    
+    return $res;
+});
+
+$socket = new SocketServer('127.0.0.1:8000');
+$http->listen($socket);
 ```
