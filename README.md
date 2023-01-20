@@ -1,5 +1,5 @@
 
-# [CommandString/ReactPHP-cookies](https://packagist.org/packages/commandstring/reactphp-cookies) - A simpler way to manipulate cookies in PHP #
+# [CommandString/ReactPHP-cookies](https://packagist.org/packages/commandstring/reactphp-cookies) - A easier way to manipulate cookies in React/Http #
 
 ### Install with Composer using `composer require commandstring/reactphp-cookies` ###
 
