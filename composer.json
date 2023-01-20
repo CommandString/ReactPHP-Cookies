@@ -1,0 +1,19 @@
+{
+    "name": "commandstring/cookies",
+    "description": "A simpler way to manipulate cookies in PHP",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "CommandString\\Cookies\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=8.1",
+        "react/http": "^1.8"
+    },
+    "suggest": {
+        "commandstring/cookie-encryption": "*"
+    }
+}
